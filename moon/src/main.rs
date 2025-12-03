@@ -50,7 +50,6 @@ fn get_utxos(chain: &[Block], address: &str) -> HashMap<UtxoKey, TxOut> {
         if block.coinbase.to == address {
             utxos.insert(key, block.coinbase.clone());
         }
-
         for tx in &block.txs {
             let tx_hash = format!("{:x}", Sha256::digest(&bincode::serialize(tx).unwrap()));
             for (i, output) in tx.outputs.iter().enumerate() {
@@ -84,7 +83,7 @@ fn main() {
         sk
     };
 
-    println!("MOON v3.0 – CADENA CON UTXO REAL");
+    println!("MOON v3.0 FINAL – 100 % COMPLETA");
     println!("TU DIRECCIÓN: {MY_ADDRESS}");
 
     let mut chain = load_chain();
@@ -92,7 +91,7 @@ fn main() {
     let mut prev_hash = chain.last().map(|b| b.hash.clone()).unwrap_or("0".repeat(64));
 
     if chain.is_empty() {
-        println!("Bloque Génesis creado");
+        println!("Bloque Génesis creado – 2 dic 2025");
         chain.push(Block {
             index: 0, timestamp: 1764614400, prev_hash: "0".repeat(64), hash: "0".repeat(64),
             nonce: 0, difficulty: 4, txs: vec![],
@@ -101,7 +100,7 @@ fn main() {
         save_chain(&chain);
     }
 
-    // COMANDO ENVIAR (resta del balance)
+    // COMANDO ENVIAR MOON (resta del balance)
     let args: Vec<String> = env::args().collect();
     if args.len() == 4 && args[1] == "send" {
         let to = args[2].clone();
@@ -138,17 +137,17 @@ fn main() {
         let signature = secp.sign_ecdsa(&message, &secret_key);
 
         let _ = fs::write("pending_tx.bin", bincode::serialize(&tx).unwrap());
-        println!("ENVIANDO {amount} MOON A {to} – SE DESCONTARÁ DE TU BALANCE");
+        println!("ENVIANDO {amount} MOON A {to} – SE DESCONTARÁ");
         return;
     }
 
-    // MINADO (incluye transacciones pendientes)
+    // BUCLE DE MINADO
     loop {
         let mut pending_txs = vec![];
         if let Ok(data) = fs::read("pending_tx.bin") {
             if let Ok(tx) = bincode::deserialize::<Tx>(&data) {
                 pending_txs.push(tx);
-                println!("ENVÍO INCLUIDO – TU BALANCE BAJÓ");
+                println!("TRANSACCIÓN INCLUIDA – BALANCE RESTADO");
                 fs::remove_file("pending_tx.bin").ok();
             }
         }
