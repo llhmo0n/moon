@@ -11,6 +11,7 @@ use std::env;
 const DATA_FILE: &str = "moon.chain";
 const KEY_FILE: &str = "wallet.key";
 const BLOCK_TIME: u64 = 60;
+const HALVING_INTERVAL: u64 = 210_000;
 const MY_ADDRESS: &str = "MC7GUBTOENK3BFW5GGHIDN7R5UQ3MF37Q";
 
 #[derive(serde::Serialize, serde::Deserialize, Clone, Debug, PartialEq, Eq, Hash)]
@@ -39,6 +40,11 @@ fn save_chain(chain: &[Block]) {
     let data = bincode::serialize(chain).unwrap();
     let _ = fs::write(DATA_FILE, &data);
     let _ = fs::write("moon.chain.safe", &data);
+}
+
+fn get_reward(height: u64) -> u64 {
+    let halvings = height / HALVING_INTERVAL;
+    if halvings >= 64 { 0 } else { 50 >> halvings }
 }
 
 fn get_utxos(chain: &[Block], address: &str) -> HashMap<UtxoKey, TxOut> {
@@ -83,15 +89,16 @@ fn main() {
         sk
     };
 
-    println!("MOON v3.0 FINAL – 100 % COMPLETA");
+    println!("MOON v4.0 FINAL – LA CADENA DEFINITIVA");
     println!("TU DIRECCIÓN: {MY_ADDRESS}");
+    println!("Supply máximo: 21 000 000 MOON – Halving cada 210 000 bloques");
 
     let mut chain = load_chain();
     let mut height = chain.len() as u64;
     let mut prev_hash = chain.last().map(|b| b.hash.clone()).unwrap_or("0".repeat(64));
 
     if chain.is_empty() {
-        println!("Bloque Génesis creado – 2 dic 2025");
+        println!("Bloque Génesis creado – 2 dic 2025 por KNKI");
         chain.push(Block {
             index: 0, timestamp: 1764614400, prev_hash: "0".repeat(64), hash: "0".repeat(64),
             nonce: 0, difficulty: 4, txs: vec![],
@@ -100,7 +107,7 @@ fn main() {
         save_chain(&chain);
     }
 
-    // COMANDO ENVIAR MOON (resta del balance)
+    // COMANDO ENVIAR MOON
     let args: Vec<String> = env::args().collect();
     if args.len() == 4 && args[1] == "send" {
         let to = args[2].clone();
@@ -152,6 +159,9 @@ fn main() {
             }
         }
 
+        let reward = get_reward(height);
+        if reward == 0 { println!("Supply máximo alcanzado – fin del minado"); break; }
+
         let difficulty = 4;
         let timestamp = SystemTime::now().duration_since(UNIX_EPOCH).unwrap().as_secs();
         let mut nonce = 0u64;
@@ -165,7 +175,7 @@ fn main() {
         chain.push(Block {
             index: height + 1, timestamp, prev_hash: prev_hash.clone(),
             hash: block_hash.clone(), nonce, difficulty, txs: pending_txs,
-            coinbase: TxOut { to: MY_ADDRESS.to_string(), amount: 50 },
+            coinbase: TxOut { to: MY_ADDRESS.to_string(), amount: reward },
         });
         save_chain(&chain);
 
@@ -176,7 +186,7 @@ fn main() {
         let _ = fs::write("/mnt/c/temp_moon/balance.txt", my_balance.to_string());
         let _ = fs::write("/mnt/c/temp_moon/height.txt", current_height.to_string());
 
-        println!("Height: {current_height} Balance: {my_balance} MOON Hash: {block_hash}");
+        println!("Height: {current_height} Reward: {reward} Balance: {my_balance} MOON");
 
         prev_hash = block_hash;
         height += 1;
