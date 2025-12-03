@@ -16,5 +16,5 @@ tokio = { version = "1.48.0", features = ["full"] }
 tungstenite = "0.28.0"
 
 
-secp256k1 = { version = "0.29", features = ["global-context"] }
+secp256k1 = { version = "0.29", features = ["global-context", "rand-std"] }
 eframe = { version = "0.28", default-features = false, features = ["glow", "default_fonts"] }
